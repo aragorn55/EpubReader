@@ -9,17 +9,23 @@ using VersFx.Formats.Text.Epub.Readers;
 using VersFx.Formats.Text.Epub.Schema.Navigation;
 using VersFx.Formats.Text.Epub.Schema.Opf;
 using VersFx.Formats.Text.Epub.Utils;
+using System.Threading.Tasks;
+using Android.Graphics;
+using Splat;
+using Android.Graphics.Drawables;
 
 namespace VersFx.Formats.Text.Epub
 {
     public static class EpubReader
     {
-        public static EpubBook OpenBook(string filePath)
+        public async static Task<EpubBook> OpenBook(string filePath)
         {
+			
             if (!File.Exists(filePath))
                 throw new FileNotFoundException("Specified epub file not found.", filePath);
             EpubBook book = new EpubBook();
             book.FilePath = filePath;
+			FileStream oStream = new FileStream (filePath, FileMode.Open);
             using (ZipArchive epubArchive = ZipFile.OpenRead(filePath))
             {
                 book.Schema = SchemaReader.ReadSchema(epubArchive);
@@ -27,13 +33,14 @@ namespace VersFx.Formats.Text.Epub
                 book.AuthorList = book.Schema.Package.Metadata.Creators.Select(creator => creator.Creator).ToList();
                 book.Author = String.Join(", ", book.AuthorList);
                 book.Content = ContentReader.ReadContentFiles(epubArchive, book);
-                book.CoverImage = LoadCoverImage(book);
+
+				book.CoverImage = await LoadCoverImage (book);
                 book.Chapters = LoadChapters(book, epubArchive);
             }
             return book;
         }
 
-        private static Image LoadCoverImage(EpubBook book)
+		private async static Task<Bitmap> LoadCoverImage(EpubBook book)
         {
             List<EpubMetadataMeta> metaItems = book.Schema.Package.Metadata.MetaItems;
             if (metaItems == null || !metaItems.Any())
@@ -49,8 +56,14 @@ namespace VersFx.Formats.Text.Epub
             EpubByteContentFile coverImageContentFile;
             if (!book.Content.Images.TryGetValue(coverManifestItem.Href, out coverImageContentFile))
                 throw new Exception(String.Format("Incorrect EPUB manifest: item with href = \"{0}\" is missing", coverManifestItem.Href));
-            using (MemoryStream coverImageStream = new MemoryStream(coverImageContentFile.Content))
-                return Image.FromStream(coverImageStream);
+			using (MemoryStream coverImageStream = new MemoryStream (coverImageContentFile.Content)) {
+				//return Image.FromStream(coverImageStream);
+				IBitmap profileImage = await BitmapLoader.Current.Load(coverImageStream, null /* Use original width */, null /* Use original height */);
+				BitmapDrawable coverImage = (BitmapDrawable)profileImage.ToNative ();
+				//Bitmap CoverImage = im.Bitmap;
+				return coverImage.Bitmap;
+			}
+                
         }
 
         private static List<EpubChapter> LoadChapters(EpubBook book, ZipArchive epubArchive)

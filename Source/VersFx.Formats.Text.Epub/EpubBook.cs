@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
 using VersFx.Formats.Text.Epub.Entities;
+using Android.Graphics;
+using Splat;
+
 
 namespace VersFx.Formats.Text.Epub
 {
@@ -12,7 +15,7 @@ namespace VersFx.Formats.Text.Epub
         public List<string> AuthorList { get; set; }
         public EpubSchema Schema { get; set; }
         public EpubContent Content { get; set; }
-        public Image CoverImage { get; set; }
+		public Bitmap CoverImage { get; set; }
         public List<EpubChapter> Chapters { get; set; }
     }
 }

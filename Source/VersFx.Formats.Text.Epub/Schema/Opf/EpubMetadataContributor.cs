@@ -8,7 +8,8 @@ namespace VersFx.Formats.Text.Epub.Schema.Opf
 {
     public class EpubMetadataContributor
     {
-        public string Contributor { get; set; }
+		public int EpubMetadataContributorIDr { get; set; }
+		public string Contributor { get; set; }
         public string FileAs { get; set; }
         public string Role { get; set; }
     }
